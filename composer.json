@@ -1,0 +1,31 @@
+{
+  "name": "alphasoft-fr/bulkio-sdk-php",
+  "description": "Bulkio SDK for PHP",
+  "type": "library",
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "F. Michel"
+    },
+    {
+      "name": "Alpha Soft",
+      "homepage": "https://www.alpha-soft.fr"
+    }
+  ],
+  "autoload": {
+    "psr-4": {
+      "AlphaSoft\\BulkIo\\": "src"
+    }
+  },
+  "require": {
+    "php": ">=8.2",
+    "symfony/http-client": "^6.4"
+  },
+  "require-dev": {
+  },
+  "config": {
+    "allow-plugins": {
+      "dealerdirect/phpcodesniffer-composer-installer": false
+    }
+  }
+}
