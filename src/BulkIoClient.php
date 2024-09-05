@@ -2,6 +2,7 @@
 
 namespace AlphaSoft\BulkIo;
 
+use AlphaSoft\BulkIo\Request\CreateHubEventRequest;
 use AlphaSoft\BulkIo\Request\CreateHubResourceRequest;
 use Exception;
 use SplFileObject;
@@ -13,7 +14,11 @@ use Symfony\Contracts\HttpClient\ResponseInterface;
 final class BulkIoClient
 {
     const API_HUBS_RESOURCES_JSON_LINE_GZ_POST = '/api/hubs/%s/resources/jsonl.gz';
+    const API_HUBS_EVENTS_POST = '/api/hubs/%s/events';
+
     const API_HUBS_RESOURCES_GET = '/api/hubs/%s/resources/%s';
+    const API_HUBS_EVENTS_GET = '/api/hubs/%s/events/%s';
+    const API_HUBS_EVENT_CONSUME = '/api/events/consume/%s';
     const API_DOWNLOAD_RESOURCES_GET = '/api/resources/%s/download';
     private ?HttpClientInterface $client = null;
 
@@ -70,6 +75,26 @@ final class BulkIoClient
     }
 
     /**
+     * Creates a new event in the specified hub.
+     *
+     * @param string $hubName The name of the hub.
+     * @param CreateHubEventRequest $hubEventRequest
+     * @return ResponseInterface The response from the server.
+     * @throws TransportExceptionInterface
+     */
+    public function createHubEvent(string $hubName, CreateHubEventRequest $hubEventRequest): ResponseInterface
+    {
+        return $this->getClient()->request('POST', sprintf(self::API_HUBS_EVENTS_POST, $hubName), [
+                'json' => [
+                    'organization_id' => $hubEventRequest->getOrganizationId(),
+                    'name' => $hubEventRequest->getName(),
+                    'data' => $hubEventRequest->getData(),
+                ],
+            ]
+        );
+    }
+
+    /**
      * Retrieves the resources in the specified hub.
      *
      * @param string $hubName The name of the hub.
@@ -80,6 +105,31 @@ final class BulkIoClient
     public function getHubResources(string $hubName, string $organizationId): ResponseInterface
     {
         return $this->getClient()->request('GET', sprintf(self::API_HUBS_RESOURCES_GET, $hubName, $organizationId), []);
+    }
+
+    /**
+     * Retrieves the events in the specified hub.
+     *
+     * @param string $hubName The name of the hub.
+     * @param string $organizationId The ID of the organization.
+     * @return ResponseInterface The response from the server.
+     * @throws TransportExceptionInterface
+     */
+    public function getHubEvents(string $hubName, string $organizationId): ResponseInterface
+    {
+        return $this->getClient()->request('GET', sprintf(self::API_HUBS_EVENTS_GET, $hubName, $organizationId), []);
+    }
+
+    /**
+     * Consume the specified event.
+     *
+     * @param string $eventId The ID of the event to consume.
+     * @return ResponseInterface The response from the server.
+     * @throws TransportExceptionInterface
+     */
+    public function consumeEvent( string $eventId): ResponseInterface
+    {
+        return $this->getClient()->request('GET', sprintf(self::API_HUBS_EVENT_CONSUME, $eventId), []);
     }
 
     /**
