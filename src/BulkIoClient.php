@@ -86,7 +86,7 @@ final class BulkIoClient
     {
         return $this->getClient()->request('POST', sprintf(self::API_HUBS_EVENTS_POST, $hubName), [
                 'json' => [
-                    'organization_id' => $hubEventRequest->getOrganizationId(),
+                    'organizationId' => $hubEventRequest->getOrganizationId(),
                     'name' => $hubEventRequest->getName(),
                     'data' => $hubEventRequest->getData(),
                 ],
