@@ -3,7 +3,9 @@
 namespace AlphaSoft\BulkIo;
 
 use AlphaSoft\BulkIo\Request\CreateHubEventRequest;
+use AlphaSoft\BulkIo\Request\CreateHubRequest;
 use AlphaSoft\BulkIo\Request\CreateHubResourceRequest;
+use AlphaSoft\BulkIo\Request\CreateHubResponse;
 use Exception;
 use SplFileObject;
 use Symfony\Component\HttpClient\HttpClient;
@@ -15,10 +17,14 @@ final class BulkIoClient
 {
     const API_HUBS_RESOURCES_JSON_LINE_GZ_POST = '/api/hubs/%s/resources/jsonl.gz';
     const API_HUBS_EVENTS_POST = '/api/hubs/%s/events';
+    const API_HUBS_REQUESTS_POST = '/api/hubs/%s/requests';
+    const API_REQUESTS_RESPONSE_POST = '/api/requests/%s/responses';
     const API_HUBS_RESOURCES_GET = '/api/hubs/%s/resources/%s';
     const API_HUBS_RESOURCES_GET_WITHOUT_ORG = '/api/hubs/%s/resources';
     const API_HUBS_EVENTS_GET = '/api/hubs/%s/events/%s';
-    const API_HUBS_EVENT_CONSUME = '/api/events/consume/%s';
+    const API_HUBS_REQUESTS_GET = '/api/hubs/%s/requests/%s';
+    const API_REQUESTS_RESPONSES_GET = '/api/requests/%s/responses';
+    const API_EVENT_CONSUME = '/api/events/consume/%s';
     const API_DOWNLOAD_RESOURCES_GET = '/api/resources/%s/download';
     private ?HttpClientInterface $client = null;
 
@@ -101,6 +107,7 @@ final class BulkIoClient
      * @param string|null $organizationId The ID of the organization.
      * @param array $queryParameters
      * @return ResponseInterface The response from the server.
+     * @throws TransportExceptionInterface
      */
     public function getHubResources(string $hubName, ?string $organizationId, array $queryParameters = []): ResponseInterface
     {
@@ -115,16 +122,88 @@ final class BulkIoClient
     }
 
     /**
+     * Creates a new request in the specified hub.
+     *
+     * @param string $hubName The name of the hub.
+     * @param CreateHubRequest $hubRequest
+     * @return ResponseInterface The response from the server.
+     * @throws TransportExceptionInterface
+     */
+    public function createHubRequest(string $hubName, CreateHubRequest $hubRequest): ResponseInterface
+    {
+        return $this->getClient()->request('POST', sprintf(self::API_HUBS_REQUESTS_POST, $hubName), [
+                'json' => [
+                    'organizationId' => $hubRequest->getOrganizationId(),
+                    'name' => $hubRequest->getName(),
+                    'contentType' => $hubRequest->getContentType(),
+                    'body' => $hubRequest->getBody(),
+                ],
+            ]
+        );
+    }
+
+    /**
+     * Creates a new request in the specified hub.
+     *
+     * @param string $requestUid
+     * @param CreateHubResponse $hubResponse
+     * @return ResponseInterface The response from the server.
+     * @throws TransportExceptionInterface
+     */
+    public function createHubResponse(string $requestUid, CreateHubResponse $hubResponse): ResponseInterface
+    {
+        return $this->getClient()->request('POST', sprintf(self::API_REQUESTS_RESPONSE_POST, $requestUid), [
+                'json' => [
+                    'status' => $hubResponse->getStatus(),
+                    'contentType' => $hubResponse->getContentType(),
+                    'body' => $hubResponse->getBody(),
+                ],
+            ]
+        );
+    }
+
+    /**
      * Retrieves the events in the specified hub.
      *
      * @param string $hubName The name of the hub.
      * @param string $organizationId The ID of the organization.
+     * @param array $queryParameters
      * @return ResponseInterface The response from the server.
      * @throws TransportExceptionInterface
      */
-    public function getHubEvents(string $hubName, string $organizationId): ResponseInterface
+    public function getHubEvents(string $hubName, string $organizationId, array $queryParameters = []): ResponseInterface
     {
-        return $this->getClient()->request('GET', sprintf(self::API_HUBS_EVENTS_GET, $hubName, $organizationId), []);
+        return $this->getClient()->request('GET', sprintf(self::API_HUBS_EVENTS_GET, $hubName, $organizationId), [
+            'query' => $queryParameters
+        ]);
+    }
+
+    /**
+     * Retrieves the requests in the specified hub.
+     *
+     * @param string $hubName The name of the hub.
+     * @param string $organizationId The ID of the organization.
+     * @param array $queryParameters
+     * @return ResponseInterface The response from the server.
+     * @throws TransportExceptionInterface
+     */
+    public function getHubRequests(string $hubName, string $organizationId, array $queryParameters = []): ResponseInterface
+    {
+        return $this->getClient()->request('GET', sprintf(self::API_HUBS_REQUESTS_GET, $hubName, $organizationId), [
+            'query' => $queryParameters
+        ]);
+    }
+
+    /**
+     * Retrieves the requests in the specified hub.
+     *
+     * @param string $requestUid
+     * @return ResponseInterface The response from the server.
+     * @throws TransportExceptionInterface
+     */
+    public function getHubResponses(string $requestUid): ResponseInterface
+    {
+        return $this->getClient()->request('GET', sprintf(self::API_REQUESTS_RESPONSES_GET, $requestUid));
     }
 
     /**
@@ -136,7 +215,7 @@ final class BulkIoClient
      */
     public function consumeEvent( string $eventId): ResponseInterface
     {
-        return $this->getClient()->request('GET', sprintf(self::API_HUBS_EVENT_CONSUME, $eventId), []);
+        return $this->getClient()->request('GET', sprintf(self::API_EVENT_CONSUME, $eventId), []);
     }
 
     /**
